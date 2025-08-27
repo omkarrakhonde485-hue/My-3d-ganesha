@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My AR Ganesha with Music</title>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <script nomodule src="https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js"></script>
+    <style>
+      body {
+        margin: 0; font-family: system-ui, sans-serif; background: #f6f7fb;
+        display: grid; place-items: center; min-height: 100vh; padding: 16px;
+        transition: background 0.3s, color 0.3s;
+      }
+      .card {
+        width: min(900px, 100%); background: #fff; border-radius: 20px; padding: 16px;
+        box-shadow: 0 10px 25px rgba(0,0,0,.08);
+        transition: background 0.3s, color 0.3s;
+      }
+      h1 { margin: 0 0 8px; font-size: 24px; }
+      p { margin: 0 0 12px; line-height: 1.5; }
+      model-viewer {
+        width: 100%; height: 60vh; background: #fff; border-radius: 16px;
+        transition: background 0.3s;
+      }
+      .controls {
+        display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 12px;
+      }
+      .row { display: flex; gap: 8px; align-items: center; }
+      input[type="range"] { width: 220px; }
+      button {
+        background: #4f46e5; color: white; border: 0; padding: 10px 14px; border-radius: 12px; cursor: pointer;
+        font-weight: 600;
+        transition: background 0.3s, color 0.3s;
+      }
+      footer { text-align: center; font-size: 12px; opacity: .7; margin-top: 8px; }
+      /* Dark mode styles */
+      body.dark {
+        background: #18181b; color: #f3f4f6;
+      }
+      .dark .card {
+        background: #23232a; color: #f3f4f6;
+        box-shadow: 0 10px 25px rgba(0,0,0,.25);
+      }
+      .dark model-viewer {
+        background: #23232a;
+      }
+      .dark button {
+        background: #a21caf; color: #fff;
+      }
+      /* 3D Deepak (lamp) styles */
+      .deepak-row {
+        display: flex;
+        justify-content: center;
+        gap: 36px;
+        margin: 22px 0 10px 0;
+      }
+      .deepak-3d {
+        width: 44px;
+        height: 44px;
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        perspective: 60px;
+      }
+      .deepak-3d .bowl {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%) rotateX(18deg);
+        width: 38px;
+        height: 20px;
+        background: radial-gradient(ellipse at center, #fbbf24 60%, #b45309 100%);
+        border-radius: 0 0 20px 20px/0 0 18px 18px;
+        box-shadow:
+          0 4px 16px 2px #fbbf24aa,
+          0 2px 8px 0 #b4530980,
+          0 10px 18px 0 #0002;
+        z-index: 1;
+        border-bottom: 3px solid #a16207;
+      }
+      .deepak-3d .rim {
+        position: absolute;
+        bottom: 17px;
+        left: 50%;
+        transform: translateX(-50%) scaleX(1.1) rotateX(18deg);
+        width: 32px;
+        height: 8px;
+        background: radial-gradient(ellipse at center, #fde68a 60%, #fbbf24 100%);
+        border-radius: 50%;
+        z-index: 2;
+        opacity: 0.85;
+        box-shadow: 0 2px 8px 0 #fbbf2480;
+      }
+      .deepak-3d .flame {
+        position: absolute;
+        left: 50%;
+        bottom: 22px;
+        width: 12px;
+        height: 22px;
+        background: radial-gradient(ellipse at center, #fffde4 60%, #fbbf24 100%);
+        border-radius: 50% 50% 60% 60%/60% 60% 100% 100%;
+        transform: translateX(-50%);
+        animation: flame-flicker-3d 1.2s infinite alternate;
+        box-shadow:
+          0 0 18px 8px #fde68a99,
+          0 0 32px 8px #fbbf2440;
+        z-index: 3;
+        opacity: 0.95;
+      }
+      .deepak-3d .wick {
+        position: absolute;
+        left: 50%;
+        bottom: 20px;
+        width: 2.5px;
+        height: 8px;
+        background: linear-gradient(to top, #78350f 60%, #fde68a 100%);
+        border-radius: 1.5px;
+        transform: translateX(-50%);
+        z-index: 2;
+        opacity: 0.7;
+      }
+      .deepak-3d:nth-child(2) .flame { animation-delay: 0.3s; }
+      .deepak-3d:nth-child(3) .flame { animation-delay: 0.6s; }
+      .deepak-3d:nth-child(4) .flame { animation-delay: 0.9s; }
+      .deepak-3d:nth-child(5) .flame { animation-delay: 1.1s; }
+      @keyframes flame-flicker-3d {
+        0% { transform: translateX(-50%) scaleY(1) scaleX(1); opacity: 1; }
+        30% { transform: translateX(-48%) scaleY(1.1) scaleX(0.95); opacity: 0.95; }
+        60% { transform: translateX(-52%) scaleY(0.95) scaleX(1.05); opacity: 0.92; }
+        100% { transform: translateX(-50%) scaleY(1.05) scaleX(1); opacity: 1; }
+      }
+      /* Dark mode for deepak */
+      body.dark .deepak-3d .bowl {
+        background: radial-gradient(ellipse at center, #fbbf24 70%, #78350f 100%);
+        box-shadow:
+          0 4px 24px 4px #fde68a88,
+          0 2px 8px 0 #78350f80,
+          0 10px 18px 0 #0004;
+        border-bottom: 3px solid #78350f;
+      }
+      body.dark .deepak-3d .rim {
+        background: radial-gradient(ellipse at center, #fde68a 60%, #fbbf24 100%);
+        box-shadow: 0 2px 12px 2px #fde68a88;
+      }
+      body.dark .deepak-3d .flame {
+        background: radial-gradient(ellipse at center, #fffde4 60%, #fbbf24 100%);
+        box-shadow:
+          0 0 22px 10px #fde68a99,
+          0 0 36px 12px #fbbf2440;
+      }
+      .model-flower-bg-container {
+        position: relative;
+        width: 100%;
+        height: 60vh;
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 0.5em;
+        display: flex;
+        align-items: stretch;
+        justify-content: stretch;
+        background: none;
+      }
+      .model-flower-bg-svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        pointer-events: none;
+        object-fit: cover;
+        opacity: 0.85;
+        transition: opacity 0.3s;
+      }
+      .model-flower-bg-container model-viewer {
+        position: relative;
+        z-index: 1;
+        background: transparent !important;
+        width: 100%;
+        height: 100%;
+        border-radius: 16px;
+      }
+      body.dark .model-flower-bg-svg {
+        filter: brightness(1.1) saturate(1.2) hue-rotate(-10deg);
+        opacity: 0.92;
+      }
+      @media (max-width: 600px) {
+        .model-flower-bg-container { height: 40vh; }
+      }
+      .watermark {
+        position: fixed;
+        top: 14px;
+        right: 22px;
+        z-index: 1000;
+        font-size: 15px;
+        color: #a21caf;
+        background: rgba(255,255,255,0.7);
+        padding: 4px 14px;
+        border-radius: 12px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        pointer-events: none;
+        box-shadow: 0 2px 8px #0001;
+        user-select: none;
+      }
+      body.dark .watermark {
+        background: rgba(36, 12, 48, 0.7);
+        color: #fbbf24;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="watermark">Made with ❤️ By team MODAK MINDS Sec-01</div>
+    <div class="card">
+      <h1>🎶 My 3D Ganesha</h1>
+      <p>Rotate, zoom, and scale the 3D Ganesha idol below.</p>
+
+      <div class="model-flower-bg-container">
+        <!-- SVG flower background -->
+        <svg class="model-flower-bg-svg" viewBox="0 0 600 400" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g opacity="0.18">
+            <!-- Large center lotus -->
+            <g>
+              <ellipse cx="300" cy="260" rx="80" ry="38" fill="#fbbf24"/>
+              <ellipse cx="300" cy="220" rx="38" ry="80" fill="#f472b6" transform="rotate(-10 300 220)"/>
+              <ellipse cx="300" cy="300" rx="38" ry="80" fill="#a21caf" transform="rotate(10 300 300)"/>
+              <ellipse cx="220" cy="260" rx="28" ry="60" fill="#fbbf24" transform="rotate(-20 220 260)"/>
+              <ellipse cx="380" cy="260" rx="28" ry="60" fill="#fbbf24" transform="rotate(20 380 260)"/>
+              <circle cx="300" cy="260" r="38" fill="#fffde4" stroke="#fbbf24" stroke-width="4"/>
+            </g>
+            <!-- Side flowers -->
+            <g>
+              <ellipse cx="120" cy="320" rx="30" ry="14" fill="#fbbf24"/>
+              <ellipse cx="120" cy="300" rx="14" ry="30" fill="#f472b6" transform="rotate(-10 120 300)"/>
+              <ellipse cx="120" cy="340" rx="14" ry="30" fill="#a21caf" transform="rotate(10 120 340)"/>
+              <circle cx="120" cy="320" r="14" fill="#fffde4" stroke="#fbbf24" stroke-width="2"/>
+            </g>
+            <g>
+              <ellipse cx="480" cy="320" rx="30" ry="14" fill="#fbbf24"/>
+              <ellipse cx="480" cy="300" rx="14" ry="30" fill="#a21caf" transform="rotate(-10 480 300)"/>
+              <ellipse cx="480" cy="340" rx="14" ry="30" fill="#f472b6" transform="rotate(10 480 340)"/>
+              <circle cx="480" cy="320" r="14" fill="#fffde4" stroke="#a21caf" stroke-width="2"/>
+            </g>
+            <!-- Small scattered petals for extra cuteness -->
+            <ellipse cx="180" cy="370" rx="10" ry="5" fill="#fbbf24"/>
+            <ellipse cx="420" cy="370" rx="10" ry="5" fill="#f472b6"/>
+            <ellipse cx="350" cy="350" rx="7" ry="3" fill="#a21caf"/>
+            <ellipse cx="250" cy="350" rx="7" ry="3" fill="#fbbf24"/>
+          </g>
+        </svg>
+        <model-viewer id="viewer"
+          src="ganesha.glb"
+          alt="Ganesha idol"
+          auto-rotate rotation-per-second="20deg"
+          shadow-intensity="1"
+          exposure="0.9"
+          environment-image="neutral"
+          style="display:block; margin:auto;">
+        </model-viewer>
+      </div>
+
+      <!-- 3D Deepak lights start -->
+      <div class="deepak-row">
+        <div class="deepak-3d">
+          <div class="bowl"></div>
+          <div class="rim"></div>
+          <div class="wick"></div>
+          <div class="flame"></div>
+        </div>
+        <div class="deepak-3d">
+          <div class="bowl"></div>
+          <div class="rim"></div>
+          <div class="wick"></div>
+          <div class="flame"></div>
+        </div>
+        <div class="deepak-3d">
+          <div class="bowl"></div>
+          <div class="rim"></div>
+          <div class="wick"></div>
+          <div class="flame"></div>
+        </div>
+        <div class="deepak-3d">
+          <div class="bowl"></div>
+          <div class="rim"></div>
+          <div class="wick"></div>
+          <div class="flame"></div>
+        </div>
+        <div class="deepak-3d">
+          <div class="bowl"></div>
+          <div class="rim"></div>
+          <div class="wick"></div>
+          <div class="flame"></div>
+        </div>
+      </div>
+      <!-- 3D Deepak lights end -->
+
+      <div class="controls">
+        <div class="row">
+          <label>Scale: <input id="scale" type="range" min="0.2" max="3" step="0.01" value="1" /></label>
+          <span id="scaleVal">1.00×</span>
+        </div>
+        <div class="row">
+          <button id="reset">Reset</button>
+        </div>
+        <div class="row">
+          <button id="musicBtn">▶️ Play Music</button>
+        </div>
+        <div class="row">
+          <button id="themeBtn" title="Toggle dark/light mode">🌙 Dark Mode</button>
+        </div>
+      </div>
+
+      <audio id="bgmusic" loop>
+        <source src="music.mp3" type="audio/mpeg">
+        Your browser does not support audio.
+      </audio>
+
+      <footer> <code></code>  <code></code> </footer>
+    </div>
+
+    <script>
+      const viewer = document.getElementById('viewer');
+      const scale = document.getElementById('scale');
+      const scaleVal = document.getElementById('scaleVal');
+      const reset = document.getElementById('reset');
+      const music = document.getElementById('bgmusic');
+      const musicBtn = document.getElementById('musicBtn');
+      let playing = false;
+
+      function applyScale(v) {
+        const s = parseFloat(v);
+        viewer.scale = `${s} ${s} ${s}`;
+        scaleVal.textContent = s.toFixed(2) + '×';
+      }
+      scale.addEventListener('input', (e) => applyScale(e.target.value));
+      reset.addEventListener('click', () => {
+        scale.value = 1;
+        applyScale(1);
+        viewer.cameraOrbit = '0deg 75deg auto';
+      });
+      applyScale(scale.value);
+
+      musicBtn.addEventListener('click', () => {
+        if (!playing) {
+          music.play();
+          playing = true;
+          musicBtn.textContent = "⏸ Pause Music";
+        } else {
+          music.pause();
+          playing = false;
+          musicBtn.textContent = "▶️ Play Music";
+        }
+      });
+
+      // Dark/Light mode toggle
+      const themeBtn = document.getElementById('themeBtn');
+      function setTheme(dark) {
+        document.body.classList.toggle('dark', dark);
+        themeBtn.textContent = dark ? "☀️ Light Mode" : "🌙 Dark Mode";
+      }
+      // Optional: persist theme in localStorage
+      let dark = localStorage.getItem('darkMode') === 'true';
+      setTheme(dark);
+      themeBtn.addEventListener('click', () => {
+        dark = !dark;
+        setTheme(dark);
+        localStorage.setItem('darkMode', dark);
+      });
+    </script>
+  </body>
+</html>
+      function setTheme(dark) {
+        document.body.classList.toggle('dark', dark);
+        themeBtn.textContent = dark ? "☀️ Light Mode" : "🌙 Dark Mode";
+      }
+      // Optional: persist theme in localStorage
+      let dark = localStorage.getItem('darkMode') === 'true';
+      setTheme(dark);
+      themeBtn.addEventListener('click', () => {
+        dark = !dark;
+        setTheme(dark);
+        localStorage.setItem('darkMode', dark);
+      });
+    </script>
+  </body>
+</html>
+
